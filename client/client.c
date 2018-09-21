@@ -56,7 +56,11 @@ int main(int argc, char* argv[])
     fprintf(stdout,
         "client: configured to connect to server listening on port %d.\n", port);
 
+    // TODO: Add code here to connect to the server
 
+    // TODO: Add code here to provide a user interface for sending
+    // data to the server.  Be sure to prompt the user to type a period ('.')
+    // on a line by itself to designate that the user is done sending stuff.
     
 	return OK;
 }
