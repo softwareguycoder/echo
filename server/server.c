@@ -30,7 +30,7 @@
 
 #define MIN_NUM_ARGS	2		// The minimum # of cmd line args to pass
 #define USAGE_STRING	"Usage: server <port_num>\n" 	// Usage string
-#define	BACKLOG_SIZE	128		// Max number of client connections
+#define BACKLOG_SIZE	128		// Max number of client connections
 
 #define RECV_BLOCK_SIZE	1
 #define RECV_FLAGS	0
