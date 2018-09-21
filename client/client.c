@@ -36,6 +36,8 @@ int main(int argc, char* argv[])
 {
     fprintf(stdout, "client: welcome to the client program\n");
 
+    fprintf(stdout, "client: Checking arguments...\n");
+
 	// Check the arguments.  If there is less than 3 arguments, then 
 	// we should print a message to stderr telling the user what to 
 	// pass on the command line and then quit
