@@ -1,5 +1,5 @@
 ///////////////////////////////////////////////////////////////////////////////
-// Echo server in C
+// server.c - Echo server in C
 // The server receives text a line at a time and echoes the text back to its
 // client only AFTER an entire line has been received.
 //
@@ -25,8 +25,8 @@
 	The goal is to separate the connection phase from the data exchange phase.
 */
 
-#define OK		0		// The server completed successfully
-#define ERROR		-1		// The server encountered an error
+#define OK              0		// The server completed successfully
+#define ERROR           -1		// The server encountered an error
 
 #define MIN_NUM_ARGS	2		// The minimum # of cmd line args to pass
 #define USAGE_STRING	"Usage: server <port_num>\n" 	// Usage string
@@ -35,7 +35,8 @@
 #define RECV_BLOCK_SIZE	1
 #define RECV_FLAGS	0
 
-void error(const char* msg) {
+void error(const char* msg) 
+{
 	perror(msg);
 	exit(ERROR);
 }
@@ -130,7 +131,7 @@ int main(int argc, char *argv[])
 	// Check the arguments.  If there is less than 2 arguments, then 
 	// we should print a message to stderr telling the user what to 
 	// pass on the command line and then quit
-	if (argc <  2) 
+	if (argc < MIN_NUM_ARGS) 
 	{
 		fprintf(stderr, USAGE_STRING);		
 		exit(ERROR);
