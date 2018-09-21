@@ -68,11 +68,12 @@ int get_line(int socket, char **lineptr, int *total_read)
 		*lineptr = (char*)calloc(RECV_BLOCK_SIZE + 1, sizeof(char));
 	}
 	
+    char prevch = '\0';
 	while(1) 
 	{
 		char ch;		// receive one char at a time
 		bytes_read = recv(socket, &ch, RECV_BLOCK_SIZE, RECV_FLAGS);
-		if (bytes_read <= 0) 
+		if (bytes_read <= 0 || prevch == '.') 
 		{
 			// Connection terminated, so stop the loop
 			// but continue running the program (because we may need
@@ -80,6 +81,8 @@ int get_line(int socket, char **lineptr, int *total_read)
 			if (bytes_read < 0)
 				fprintf(stderr, 
 					"server: Network error stopped us from receiving more text.");
+
+            prevch = ch;
 			break;
 		}
 
@@ -98,6 +101,7 @@ int get_line(int socket, char **lineptr, int *total_read)
 		// then we're done, time to apply the null terminator
 		if (ch == '\n')
 		{
+            prevch = ch;
 			break;
 		}
 		
@@ -240,9 +244,7 @@ int main(int argc, char *argv[])
 
 		if (buf != NULL
 			&& strlen(buf) > 0)	// we got stuff from the client
-		{
-			fprintf(stdout, "%s\n", buf);
-			
+		{			
 			// echo received content back
 			send(client_socket, buf, strlen(buf), 0);
 		}
