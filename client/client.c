@@ -17,6 +17,7 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -94,12 +95,12 @@ int get_line(int socket, char **lineptr, int *total_read)
 		*lineptr = (char*)calloc(RECV_BLOCK_SIZE + 1, sizeof(char));
 	}
 	
-    char prevch = '\0';
+    //char prevch = '\0';
 	while(1) 
 	{
 		char ch;		// receive one char at a time
 		bytes_read = recv(socket, &ch, RECV_BLOCK_SIZE, RECV_FLAGS);
-		if (bytes_read <= 0 || prevch == '.') 
+		if (bytes_read < 0)// || prevch == '.') 
 		{
 			// Connection terminated, so stop the loop
 			// but continue running the program (because we may need
@@ -108,7 +109,7 @@ int get_line(int socket, char **lineptr, int *total_read)
 				fprintf(stderr, 
 					"server: Network error stopped us from receiving more text.");
 
-            prevch = ch;
+            //prevch = ch;
 			break;
 		}
 
@@ -127,7 +128,7 @@ int get_line(int socket, char **lineptr, int *total_read)
 		// then we're done, time to apply the null terminator
 		if (ch == '\n')
 		{
-            prevch = ch;
+            //prevch = ch;
 			break;
 		}
 		
@@ -203,6 +204,9 @@ int main(int argc, char* argv[])
     }
 
     fprintf(stdout,
+        "client: Hostname resolution succeeded.\n");
+
+    fprintf(stdout,
         "client: Attempting to allocate new connection endpoint...\n");
     
     client_socket = socket(AF_INET, SOCK_STREAM, 0);
@@ -212,6 +216,20 @@ int main(int argc, char* argv[])
     }    
 
     fprintf(stdout, "client: Created connection endpoint successfully.\n");
+
+    /*fprintf(stdout, "client: Configuring client endpoint to be non-blocking...");
+
+    // Attempt to configure the client_socket to be non-blocking, this way
+    // we can hopefully receive data as it is being sent until only getting
+    // the data when the client closes the connection.
+    if (fcntl(client_socket, F_SETFL, fcntl(client_socket, F_GETFL, 0) | O_NONBLOCK) < 0)
+    {
+        close(client_socket);
+        error("server: Could not set the client endpoint to be non-blocking.");
+    }
+
+    fprintf(stdout, "client: Client endpoint configured to be non-blocking.");*/
+
 
     fprintf(stdout,
         "client: Attempting to contact the server at '%s' on port %d...\n", hostname, port);
