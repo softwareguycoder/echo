@@ -12,12 +12,15 @@
 // code that provided inspiration
 //
 
+#define _GNU_SOURCE
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <poll.h>
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,12 +30,36 @@
 #define OK              0		// The server completed successfully
 #define ERROR           -1		// The server encountered an error
 
+#define FALSE           0
+#define TRUE            1
+
 #define MIN_NUM_ARGS	3		// The minimum # of cmd line args to pass
 #define MAX_LINE_LENGTH 255     // The maximum length of a line
 #define USAGE_STRING	"Usage: client <hostname> <port_num>\n" 	// Usage string
 
 #define RECV_BLOCK_SIZE	1
 #define RECV_FLAGS	0
+
+// Returns zero if the server is still connected through the client
+// endpoint referenced by the socket parameter; nonzero if disconnected
+int has_server_disconnected(int socket)
+{
+    if (socket <= 0)
+        return TRUE;
+
+    struct pollfd fds[1];
+    fds[0].fd = socket;
+    fds[1].events = POLLRDHUP;
+
+    if (poll(fds, 1, 1000) > 0
+            && fds[0].revents & POLLRDHUP)
+    {
+        // server endpoint is disconnected  
+        return TRUE;
+    }
+
+    return FALSE;
+}
 
 // Frees the memory at the address specified.
 // pBuffer is the address of a pointer which points to memory
@@ -272,11 +299,23 @@ int main(int argc, char* argv[])
 
     while(NULL != fgets(cur_line, MAX_LINE_LENGTH, stdin))
     {
+        // The first order of business is to poll the client socket
+        // and check whether the server has closed the connection.        
+        /*if (has_server_disconnected(client_socket))
+        {
+            break;
+        }*/
+
         if (strcasecmp(cur_line, "exit\n") == 0) break;
         if (strcasecmp(cur_line, "quit\n") == 0) break;
 
         if (strcasecmp(cur_line, "\n") == 0) 
         {
+            /*if (has_server_disconnected(client_socket))
+            {
+                break;
+            }*/
+
             fprintf(stdout, "> ");
             continue;
         }
@@ -313,12 +352,13 @@ int main(int argc, char* argv[])
             free_buffer((void**)&reply_buffer);
         }
 
+        /*if (has_server_disconnected(client_socket))
+        {
+            break;
+        }*/
+
         fprintf(stdout, "> ");
     }
-
-    // TODO: Add code here to provide a user interface for sending
-    // data to the server.  Be sure to prompt the user to type a period ('.')
-    // on a line by itself to designate that the user is done sending stuff.
 
     close(client_socket);
     

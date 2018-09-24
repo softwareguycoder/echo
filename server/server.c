@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h> 
@@ -101,6 +102,9 @@ int get_line(int socket, char **lineptr, int *total_read)
 		bytes_read = recv(socket, &ch, RECV_BLOCK_SIZE, RECV_FLAGS);
 		if (bytes_read < 0) 
 		{
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                continue;
+
             error("server: Network error stopped us from receiving more text.");
 
             //prevch = ch;
@@ -261,35 +265,64 @@ int main(int argc, char *argv[])
 
         fprintf(stdout, "server: Client endpoint configured to be non-blocking.\n");
 
-		fprintf(stdout, "server: new client connected.  awaiting data...\n");
+		fprintf(stdout, "server: new client connected.\n");
 
-		// receive all the lines of text that the client wants to send.
-		// put them all in a buffer.
-		char* buf = NULL;
-		int total = 0;		// total size of the message (all lines)
+        while(1)
+        {
+            fprintf(stdout, "server: Awaiting data...\n");
+            
+		    // receive all the lines of text that the client wants to send.
+		    // put them all in a buffer.
+		    char* buf = NULL;
+		    int total = 0;		// total size of the message (all lines)
 
-		// just call getline (above) over and over again until 
-		// all the data has been read that the client wants to send.
-		// Clients should figure out a way to determine when to stop	
-		// sending input.
-		while (0 < get_line(client_socket, &buf, &total)) ;
+		    // just call getline (above) over and over again until 
+		    // all the data has been read that the client wants to send.
+		    // Clients should figure out a way to determine when to stop	
+		    // sending input.
+		    if (0 < get_line(client_socket, &buf, &total)) 
+            {           
+		        fprintf(stdout, "server: %d bytes read.\n", total);
 
-		fprintf(stdout, "server: %d bytes read.\n", total);
+		        if (buf != NULL
+			        && strlen(buf) > 0)	// we got stuff from the client
+		        {			
+                    fprintf(stdout, "server: echoing text back to the client...\n");
 
-		if (buf != NULL
-			&& strlen(buf) > 0)	// we got stuff from the client
-		{			
-			// echo received content back
-			send(client_socket, buf, strlen(buf), 0);
-		}
-		
-		// disconnect from the client
-		close(client_socket);
+			        // echo received content back
+			        send(client_socket, buf, strlen(buf), 0);
+
+                    if (strcmp(buf, ".\n") == 0)
+                    {               
+	                    // disconnect from the client
+	                    close(client_socket);   
+
+                        fprintf(stdout,
+                            "server: Client connection closed.\n");
+                    
+                        break;
+                    }   
+
+                    free_buffer((void**)&buf);
+		        }
+            }
+        }
 
 		// Let the 'outer' while loop start over again, waiting to accept new
 		// client connections.  User must close the server 'by hand'
 		// but we want the server to remain 'up' as long as possible,
 		// just in case that more clients want to connect
+
+        fprintf(stdout, 
+            "server: Press ENTER or type 'continue' at the prompt to continue, 'exit' to quit.\n");
+
+        char user_input[9];
+        fprintf(stdout, "> ");
+        fgets(user_input, 9, stdin);
+        if (strcmp(user_input, "continue") == 0)
+            continue;
+        if (strncmp("exit", user_input, 4) == 0)
+            break;
 	}
 
 	close(server_socket);
