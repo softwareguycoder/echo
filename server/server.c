@@ -45,8 +45,14 @@ int is_execution_over = 0;
 // in this process' terminal window
 void cleanup_handler(int s)
 {
-    if (server_socket <= 0)     // If the server socket descriptor is zero 
-    {                               // or less, there is nothing to do here.
+    // Handle the case where the user presses CTRL+C in the terminal
+    // by performing an orderly shut down of the server and freeing
+    // operating system resources.
+
+    // If the socket file descriptor in the global variable server_socket
+    // is less than or equal zero, then there is nothing to do here.
+    if (server_socket <= 0)    
+    {
         return;
     }
 

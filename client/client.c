@@ -352,10 +352,10 @@ int main(int argc, char* argv[])
             free_buffer((void**)&reply_buffer);
         }
 
-        /*if (has_server_disconnected(client_socket))
+        if (has_server_disconnected(client_socket))
         {
             break;
-        }*/
+        }
 
         fprintf(stdout, "> ");
     }
