@@ -12,6 +12,7 @@
 // inspiration
 //
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -36,6 +37,44 @@
 
 #define RECV_BLOCK_SIZE	1
 #define RECV_FLAGS	0
+
+int server_socket = 0;
+int is_execution_over = 0;
+
+// Functionality to handle the case where the user has pressed CTRL+C
+// in this process' terminal window
+void cleanup_handler(int s)
+{
+    if (server_socket <= 0)     // If the server socket descriptor is zero 
+    {                               // or less, there is nothing to do here.
+        return;
+    }
+
+    close(server_socket);
+    server_socket = 0;
+
+    is_execution_over = 1;
+
+    fprintf(stdout, "server: Server endpoint closed.\n");
+}
+
+// Installs a sigint handler to handle the case where the user
+// presses CTRL+C in this process' terminal window.  This allows 
+// us to clean up the main while loop and free operating system
+// resources gracefully.
+//
+// Shout-out to <https://stackoverflow.com/questions/1641182/how-can-i-catch-a-ctrl-c-event-c>
+// for this code.
+void install_sigint_handler()
+{
+    struct sigaction sigIntHandler;
+
+    sigIntHandler.sa_handler = cleanup_handler;
+    sigemptyset(&sigIntHandler.sa_mask);
+    sigIntHandler.sa_flags = 0;
+
+    sigaction(SIGINT, &sigIntHandler, NULL);
+}
 
 // Frees the memory at the address specified.
 // pBuffer is the address of a pointer which points to memory
@@ -157,8 +196,14 @@ int get_line(int socket, char **lineptr, int *total_read)
 
 int main(int argc, char *argv[]) 
 {
-    fprintf(stdout, "server: welcome to the server program.\n");
+    fprintf(stdout, "server: Welcome to the server program.\n");
 
+    fprintf(stdout, "server: Installing SIGINT handler to catch CTRL+C...");
+
+    install_sigint_handler();
+
+    fprintf(stdout, "server: SIGINT handler installed.\n");
+    
     fprintf(stdout, "server: Checking arguments...\n");
 
 	// Check the arguments.  If there is less than 2 arguments, then 
@@ -185,7 +230,7 @@ int main(int argc, char *argv[])
 
 	// Get a handle to a socket that will listen on the desired port at
 	// our IP address
-	int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
 	if (server_socket < 0) 
 	    error("server: Failed to open listen socket.");
 
@@ -237,7 +282,6 @@ int main(int argc, char *argv[])
 	// run indefinitely
 	while(1) 
 	{
-
 		fprintf(stdout, "server: waiting for client connection...\n");
 
 		// We now call the accept function.  This function holds us up
@@ -269,6 +313,11 @@ int main(int argc, char *argv[])
 
         while(1)
         {
+            if (is_execution_over > 0)
+            {
+                break;
+            }
+
             fprintf(stdout, "server: Awaiting data...\n");
             
 		    // receive all the lines of text that the client wants to send.
@@ -282,29 +331,31 @@ int main(int argc, char *argv[])
 		    // sending input.
 		    if (0 < get_line(client_socket, &buf, &total)) 
             {           
-		        fprintf(stdout, "server: %d bytes read.\n", total);
+                fprintf(stdout, "C: %s", buf);
 
-		        if (buf != NULL
-			        && strlen(buf) > 0)	// we got stuff from the client
-		        {			
-                    fprintf(stdout, "server: echoing text back to the client...\n");
+                if (strcmp(buf, ".\n") == 0)
+                {               
+                    // disconnect from the client
+                    close(client_socket);   
 
-			        // echo received content back
-			        send(client_socket, buf, strlen(buf), 0);
+                    fprintf(stdout,
+                        "server: Client connection closed.\n");
 
-                    if (strcmp(buf, ".\n") == 0)
-                    {               
-	                    // disconnect from the client
-	                    close(client_socket);   
+                    break;
+                }   
 
-                        fprintf(stdout,
-                            "server: Client connection closed.\n");
-                    
-                        break;
-                    }   
+                if (buf != NULL
+                    && strlen(buf) > 0)	// we got stuff from the client
+                {			
+                    // echo received content back
+                    send(client_socket, buf, strlen(buf), 0);
 
-                    free_buffer((void**)&buf);
-		        }
+                    fprintf(stdout, "S: %s", buf);
+                }
+
+                // throw away the buffer since we just need it to hold
+                // one line at a time.
+                free_buffer((void**)&buf);
             }
         }
 
@@ -313,9 +364,10 @@ int main(int argc, char *argv[])
 		// but we want the server to remain 'up' as long as possible,
 		// just in case that more clients want to connect
 
-        fprintf(stdout, 
-            "server: Press ENTER or type 'continue' at the prompt to continue, 'exit' to quit.\n");
-
+        // breaking this while loop and closing down the server is now handled by
+        // a SIGINT handler.
+        
+        /*
         char user_input[9];
         fprintf(stdout, "> ");
         fgets(user_input, 9, stdin);
@@ -323,9 +375,9 @@ int main(int argc, char *argv[])
             continue;
         if (strncmp("exit", user_input, 4) == 0)
             break;
+        */
 	}
 
-	close(server_socket);
 	fprintf(stdout, "server: execution finished with no errors.\n");	
 
 	return OK;
