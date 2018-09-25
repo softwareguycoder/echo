@@ -72,8 +72,8 @@ void cleanup_handler(int s)
 // us to clean up the main while loop and free operating system
 // resources gracefully.
 //
-// Shout-out to <https://stackoverflow.com/questions/1641182/how-can-i-catch-a-ctrl-c-event-c>
-// for this code.
+// Shout-out to <https://stackoverflow.com/questions/1641182/
+// how-can-i-catch-a-ctrl-c-event-c> for this code.
 void install_sigint_handler()
 {
     struct sigaction sigIntHandler;

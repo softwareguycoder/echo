@@ -330,6 +330,11 @@ int main(int argc, char* argv[])
             return ERROR;
         } 
 
+        // If a period '.' has been sent to the server, this is the way the user
+        // says they are done using the server, so stop here before trying to receive
+        // a reply from the server.
+        if (strcasecmp(cur_line, ".\n") == 0) break;   
+
         // Now, assume the server has sent a reply, and call the recv() function
         // to attempt to pull the text sent back by the server off of the data
         // stream.  Assume that the server just sends back one line at a time.
@@ -356,7 +361,6 @@ int main(int argc, char* argv[])
         {
             break;
         }*/
-
 
         fprintf(stdout, "> ");
     }
