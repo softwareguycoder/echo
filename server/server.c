@@ -288,6 +288,12 @@ int main(int argc, char *argv[])
 	// run indefinitely
 	while(1) 
 	{
+        if (is_execution_over > 0
+            || server_socket <= 0)
+        {
+            break;
+        }
+
 		fprintf(stdout, "server: waiting for client connection...\n");
 
 		// We now call the accept function.  This function holds us up
@@ -300,7 +306,13 @@ int main(int argc, char *argv[])
 			&client_address_len)) < 0) 
 		{
             close(client_socket);
-			error("server: Could not open a socket to accept data.\n");
+
+            if (errno == EBADF)
+            {
+                break;  // bad file descriptor, thrown when user presses CTRL+C
+            }
+
+			error("server: Could not open a socket to accept data");
 		}
 
         fprintf(stdout, "server: Configuring client endpoint to be non-blocking...\n");
@@ -319,11 +331,6 @@ int main(int argc, char *argv[])
 
         while(1)
         {
-            if (is_execution_over > 0)
-            {
-                break;
-            }
-
             fprintf(stdout, "server: Awaiting data...\n");
             
 		    // receive all the lines of text that the client wants to send.
