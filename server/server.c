@@ -62,6 +62,9 @@ void cleanup_handler(int s)
     is_execution_over = 1;
 
     fprintf(stdout, "server: Server endpoint closed.\n");
+	fprintf(stdout, "server: execution finished with no errors.\n");	
+
+    exit(OK);
 }
 
 // Installs a sigint handler to handle the case where the user
@@ -288,12 +291,6 @@ int main(int argc, char *argv[])
 	// run indefinitely
 	while(1) 
 	{
-        if (is_execution_over > 0
-            || server_socket <= 0)
-        {
-            break;
-        }
-
 		fprintf(stdout, "server: waiting for client connection...\n");
 
 		// We now call the accept function.  This function holds us up
