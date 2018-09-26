@@ -20,7 +20,7 @@
 #include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
-include <sys/types.h> 
+#include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h> //inet_addr, inet_pton
@@ -203,8 +203,7 @@ int main(int argc, char* argv[])
 {
     int client_socket = 0;                      // Client socket for connecting to the server.
     struct hostent      *he;                    // Host entry
-    char                **pp = NULL;            // Pointer to a pointer of char
-    struct sockaddr_in  server_address;         // Structure for the server address and nPort
+    struct sockaddr_in  server_address;         // Structure for the server address and port
     char cur_line[MAX_LINE_LENGTH + 1];         // Buffer for the current line inputted by the user
                                                 // for sending to the server
     
@@ -228,35 +227,10 @@ int main(int argc, char* argv[])
         "client: Configured to connect to server at address '%s'.\n", hostnameOrIp);
     fprintf(stdout,
         "client: Configured to connect to server listening on nPort %d.\n", nPort);  
-
-    /* Just in case the user has entered a host name, such as 'www.microsoft.com'
-        or 'localhost' instead of an IP address, or an IP address and we are not sure
-        whether it's a valid IP address, resolve the host name or IP address using DNS
-        in order to attempt to map a host name to the corresponding IP address, or to 
-        validate the IP address passed,  for passing to the connect() function later 
-        on down the line.  Put this attempt to resolve the name code before the creation 
-        of the socket endpoint, so if we fail to resolve the name, then we have not 
-        wasted operating system resources by creating a new socket that we now do not need. */
-
-    fprintf(stdout,
-        "client: Validating server host name/address submitted by user...\n");
-    
-    if (!canResolveServerAddress(hostnameOrIp, &he))
-    {
-        fprintf(stderr,
-            "client: '%s' is not a valid Internet host name or IP address.\n",
-            hostnameOrIp);
-
-        return ERROR;
-    }
-
-    fprintf(stdout,
-        "client: Connection address of the server has been validated.\n");
-    
     fprintf(stdout,
         "client: Attempting to allocate new connection endpoint...\n");
     
-    client_socket = socket(AF_INET, SOCK_STREAM, 0);
+    client_socket = SocketDemoUtils_createTcpSocket();
     if (client_socket <= 0)
     {
         error("client: Could not create endpoint for connecting to the server.\n");
@@ -264,22 +238,10 @@ int main(int argc, char* argv[])
 
     fprintf(stdout, "client: Created connection endpoint successfully.\n");
 
-    fprintf(stdout,
-        "client: Attempting to contact the server at '%s' on nPort %d...\n", hostnameOrIp, nPort);
-
-    /* copy the network address to sockaddr_in structure */
-    memcpy(&server_address.sin_addr, he->h_addr_list[0], he->h_length);
-    server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(nPort);  
-    
-    if (connect(client_socket, (struct sockaddr*)&server_address, sizeof(server_address)) < 0)
-    {
-        char buf[75];
-        sprintf(buf, "client: The attempt to contact the server at '%s' on nPort %d failed.\n", hostnameOrIp, nPort);
-        error_and_close(client_socket, buf);
-    }
-
-    fprintf(stdout, "client: Connected to the server at '%s' on nPort %d.\n", hostnameOrIp, nPort);
+    // Attempt to connect to the server.  The function below is guaranteed to close the socket
+    // and forcibly terminate this program in the event of a network error, so we do not need   
+    // to check the result.
+    SocketDemoUtils_connect(client_socket, hostname, nPort);
 
     /* Print some usage directions */
     fprintf(stdout,
