@@ -74,6 +74,15 @@ void free_buffer(void **ppBuffer)
  **/
 void error_and_close(int sockFd, const char *msg)
 {
+    if (msg == NULL
+        || strlen(msg) == 0
+        || msg[0] == '\0')
+    {
+        perror(NULL);
+        exit(ERROR);
+        return;         // This return statement might not fire, but just in case.
+    }
+
     fprintf(stderr, "%s", msg);
 	perror(NULL);
 
@@ -93,6 +102,13 @@ void error_and_close(int sockFd, const char *msg)
  **/
 void error(const char* msg)
 {
+    if (msg == NULL
+        || strlen(msg) == 0
+        || msg[0] == '\0')
+    {
+        return;
+    }
+
     fprintf(stderr, "%s", msg);
 	perror(NULL);
 	exit(ERROR);
@@ -122,6 +138,16 @@ int SocketDemoUtils_createTcpSocket()
     return sockFd;
 }
 
+/**
+ *  \brief Populates the port and address information for a server
+ *  so the server knows the hostname/IP address and port of the computer 
+ *  it is listening on.
+ *  \param port String containing the port number to listen on.  Must be numeric.
+ *  \param hostnameOrIp String containing the hostname or IP address of the server
+    computer.
+ *  \param addr Address of storage that will receive a filled-in sockaddr_in structure
+ *  that defines the server endpoint.
+ */
 int SocketDemoUtils_populateAddrInfo(char *port, char *hostnameOrIp, struct sockaddr_in *addr)
 {
     
