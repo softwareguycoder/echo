@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // client.c - Echo client in C
 // This program allows the user to connect to an ECHO server residing on a
-// IP address and port as supplied on the command line.  The user interface 
+// IP address and nPort as supplied on the command line.  The user interface 
 // of this program allows the user to type lines of text to be sent to the
 // server.
 //
@@ -24,7 +24,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include<arpa/inet.h> //inet_addr
+#include <arpa/inet.h> //inet_addr, inet_pton
 #include <netdb.h>
 
 #define OK              0		// The server completed successfully
@@ -35,10 +35,47 @@
 
 #define MIN_NUM_ARGS	3		// The minimum # of cmd line args to pass
 #define MAX_LINE_LENGTH 255     // The maximum length of a line
-#define USAGE_STRING	"Usage: client <hostname> <port_num>\n" 	// Usage string
+#define USAGE_STRING	"Usage: client <host name or IP> <port_num>\n" 	// Usage string
 
 #define RECV_BLOCK_SIZE	1
 #define RECV_FLAGS	0
+
+// Determines whether the host name or IP address provided by the user can be
+// resolved by DNS.  Attempts to actually perform the resolution.  Returns zero 
+// if resolution has failed, or if the 'he' parameter does not contain a valid 
+// address, or 'hostnameOrIP' is blank. Returns nonzero if the host name or IP address
+// can be resolved, and fills the location pointed to by 'he' with a pointer to a 
+// hostent structure containing the information necessary to connect to a 
+// remote server.
+int canResolveServerAddress(const char *hostnameOrIP, struct hostent** he)
+{
+    if (hostnameOrIP == NULL
+        || hostnameOrIP[0] == '\0'
+        || strlen(hostnameOrIP) == 0)
+    {
+        return FALSE;
+    }
+
+    if (he == NULL) 
+    {
+        // return FALSE if no storage location for the he pointer passed
+        return FALSE;
+    }
+
+    fprintf(stdout, 
+        "client: Resolving host name or IP address '%s'...\n", hostnameOrIP);
+
+    if ( (*he = gethostbyname(hostnameOrIP) ) == NULL ) {
+        fprintf(stderr, "client: Hostname or IP address resolution failed.\n");
+        *he = NULL;
+        return FALSE;
+    }
+
+    fprintf(stdout,
+        "client: Hostname or IP address resolution succeeded.\n");
+
+    return TRUE;
+}
 
 // Returns zero if the server is still connected through the client
 // endpoint referenced by the socket parameter; nonzero if disconnected
@@ -189,8 +226,7 @@ int main(int argc, char* argv[])
     int client_socket = 0;                      // Client socket for connecting to the server.
     struct hostent      *he;                    // Host entry
     char                **pp = NULL;            // Pointer to a pointer of char
-    char                answer[INET_ADDRSTRLEN];// Answer when resolving host
-    struct sockaddr_in  server_address;         // Structure for the server address and port
+    struct sockaddr_in  server_address;         // Structure for the server address and nPort
     char cur_line[MAX_LINE_LENGTH + 1];         // Buffer for the current line inputted by the user
                                                 // for sending to the server
     
@@ -207,32 +243,38 @@ int main(int argc, char* argv[])
 		exit(ERROR);
 	}
 
-    const char* hostname = argv[1];         // address or hostname of the remote server
-    int port = atoi(argv[2]);               // port number that server is listening on
+    const char* hostnameOrIp = argv[1];         // address or host name of the remote server
+    int nPort = atoi(argv[2]);                      // port number that server is listening on
 
     fprintf(stdout, 
-        "client: Configured to connect to server at address '%s'.\n", hostname);
+        "client: Configured to connect to server at address '%s'.\n", hostnameOrIp);
     fprintf(stdout,
-        "client: Configured to connect to server listening on port %d.\n", port);  
+        "client: Configured to connect to server listening on nPort %d.\n", nPort);  
 
     /* Just in case the user has entered a host name, such as 'www.microsoft.com'
-        or 'localhost' instead of an IP address, resolve the hostname using DNS
-        in order to attempt to map it to the corresponding IP address for passing
-        to the connect() function later on down the line.  Put this attempt to
-        resolve the name code before the creation of the socket endpoint, so if
-        we fail to resolve the name, then we have not wasted operating system resources
-        by creating a new socket that we now do not need. */
+        or 'localhost' instead of an IP address, or an IP address and we are not sure
+        whether it's a valid IP address, resolve the host name or IP address using DNS
+        in order to attempt to map a host name to the corresponding IP address, or to 
+        validate the IP address passed,  for passing to the connect() function later 
+        on down the line.  Put this attempt to resolve the name code before the creation 
+        of the socket endpoint, so if we fail to resolve the name, then we have not 
+        wasted operating system resources by creating a new socket that we now do not need. */
 
-    fprintf(stdout, 
-        "client: Resolving hostname '%s'...\n", hostname);
+    fprintf(stdout,
+        "client: Validating server host name/address submitted by user...\n");
+    
+    if (!canResolveServerAddress(hostnameOrIp, &he))
+    {
+        fprintf(stderr,
+            "client: '%s' is not a valid Internet host name or IP address.\n",
+            hostnameOrIp);
 
-    if ( (he = gethostbyname(hostname) ) == NULL ) {
-        error("client: Hostname resolution failed.\n");
+        return ERROR;
     }
 
     fprintf(stdout,
-        "client: Hostname resolution succeeded.\n");
-
+        "client: Connection address of the server has been validated.\n");
+    
     fprintf(stdout,
         "client: Attempting to allocate new connection endpoint...\n");
     
@@ -257,23 +299,22 @@ int main(int argc, char* argv[])
 
     fprintf(stdout, "client: Client endpoint configured to be non-blocking.");*/
 
-
     fprintf(stdout,
-        "client: Attempting to contact the server at '%s' on port %d...\n", hostname, port);
+        "client: Attempting to contact the server at '%s' on nPort %d...\n", hostnameOrIp, nPort);
 
     /* copy the network address to sockaddr_in structure */
     memcpy(&server_address.sin_addr, he->h_addr_list[0], he->h_length);
     server_address.sin_family = AF_INET;
-    server_address.sin_port = htons(port);  
+    server_address.sin_port = htons(nPort);  
     
     if (connect(client_socket, (struct sockaddr*)&server_address, sizeof(server_address)) < 0)
     {
         char buf[75];
-        sprintf(buf, "client: The attempt to contact the server at '%s' on port %d failed.\n", hostname, port);
+        sprintf(buf, "client: The attempt to contact the server at '%s' on nPort %d failed.\n", hostnameOrIp, nPort);
         error_and_close(client_socket, buf);
     }
 
-    fprintf(stdout, "client: Connected to the server at '%s' on port %d.\n", hostname, port);
+    fprintf(stdout, "client: Connected to the server at '%s' on nPort %d.\n", hostnameOrIp, nPort);
 
     /* Print some usage directions */
     fprintf(stdout,
