@@ -20,8 +20,7 @@
 #include <strings.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <poll.h>
-#include <sys/types.h> 
+include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h> //inet_addr, inet_pton
@@ -75,27 +74,6 @@ int canResolveServerAddress(const char *hostnameOrIP, struct hostent** he)
         "client: Hostname or IP address resolution succeeded.\n");
 
     return TRUE;
-}
-
-// Returns zero if the server is still connected through the client
-// endpoint referenced by the socket parameter; nonzero if disconnected
-int has_server_disconnected(int socket)
-{
-    if (socket <= 0)
-        return TRUE;
-
-    struct pollfd fds[1];
-    fds[0].fd = socket;
-    fds[1].events = POLLRDHUP;
-
-    if (poll(fds, 1, 1000) > 0
-            && fds[0].revents & POLLRDHUP)
-    {
-        // server endpoint is disconnected  
-        return TRUE;
-    }
-
-    return FALSE;
 }
 
 // Frees the memory at the address specified.
@@ -340,23 +318,11 @@ int main(int argc, char* argv[])
 
     while(NULL != fgets(cur_line, MAX_LINE_LENGTH, stdin))
     {
-        // The first order of business is to poll the client socket
-        // and check whether the server has closed the connection.        
-        /*if (has_server_disconnected(client_socket))
-        {
-            break;
-        }*/
-
         if (strcasecmp(cur_line, "exit\n") == 0) break;
         if (strcasecmp(cur_line, "quit\n") == 0) break;
 
         if (strcasecmp(cur_line, "\n") == 0) 
         {
-            /*if (has_server_disconnected(client_socket))
-            {
-                break;
-            }*/
-
             fprintf(stdout, "> ");
             continue;
         }
@@ -397,11 +363,6 @@ int main(int argc, char* argv[])
         
             free_buffer((void**)&reply_buffer);
         }
-
-        /*if (has_server_disconnected(client_socket))
-        {
-            break;
-        }*/
 
         fprintf(stdout, "> ");
     }
