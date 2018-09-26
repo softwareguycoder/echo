@@ -23,6 +23,9 @@
 #define FALSE           0
 #define TRUE            1
 
+#define RECV_BLOCK_SIZE	1
+#define RECV_FLAGS	0
+
 void free_buffer(void **ppBuffer);
 void error_and_close(int sockFd, const char *msg);
 void error(const char* msg);

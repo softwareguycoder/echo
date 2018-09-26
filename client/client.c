@@ -264,19 +264,6 @@ int main(int argc, char* argv[])
 
     fprintf(stdout, "client: Created connection endpoint successfully.\n");
 
-    /*fprintf(stdout, "client: Configuring client endpoint to be non-blocking...");
-
-    // Attempt to configure the client_socket to be non-blocking, this way
-    // we can hopefully receive data as it is being sent until only getting
-    // the data when the client closes the connection.
-    if (fcntl(client_socket, F_SETFL, fcntl(client_socket, F_GETFL, 0) | O_NONBLOCK) < 0)
-    {
-        close(client_socket);
-        error("server: Could not set the client endpoint to be non-blocking.");
-    }
-
-    fprintf(stdout, "client: Client endpoint configured to be non-blocking.");*/
-
     fprintf(stdout,
         "client: Attempting to contact the server at '%s' on nPort %d...\n", hostnameOrIp, nPort);
 
