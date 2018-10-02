@@ -20,7 +20,7 @@ int isUserPortValid(int port)
  * \returns Zero if resolution has failed; nonzero otherwise.
  * \remarks If this function returns nonzero, then the value of '*he'
  *  will be the address of a storage location containing a hostent
- *  structure contianing information for the remote host.
+ *  structure containing information for the remote host.
  */
 int isValidHostnameOrIp(const char *hostnameOrIP, struct hostent **he)
 {
@@ -91,9 +91,9 @@ void error_and_close(int sockFd, const char *msg)
     fprintf(stderr, "%s", msg);
 	perror(NULL);
 
-    if (socket > 0)
+    if (sockFd > 0)
     {
-        close(socket);
+        close(sockFd);
         fprintf(stderr, "Exiting with error code %d.\n", ERROR);
     }
     
@@ -170,7 +170,7 @@ void SocketDemoUtils_populateServerAddrInfo(const char *port, struct sockaddr_in
 {
     if (port == NULL
         || strlen(port)
-        || port[0] = '\0')
+        || port[0] == '\0')
     {
         fprintf(stderr,
             "SocketDemoUtils_populateServerAddrInfo: String containing the port number is blank.\n");
@@ -216,7 +216,7 @@ void SocketDemoUtils_populateServerAddrInfo(const char *port, struct sockaddr_in
 */
 int SocketDemoUtils_bind(int sockFd, struct sockaddr_in *addr)
 {
-    if (sockFd < 0)
+    if (sockFd <= 0)
     {
         errno = EBADF;
         return ERROR;   // Invalid socket file descriptor
@@ -233,7 +233,7 @@ int SocketDemoUtils_bind(int sockFd, struct sockaddr_in *addr)
 
 int SocketDemoUtils_listen(int sockFd)
 {
-    if (sockFd < 0)
+    if (sockFd <= 0)
     {
         errno = EBADF;
         return ERROR;   // Invalid socket file descriptor
@@ -244,7 +244,7 @@ int SocketDemoUtils_listen(int sockFd)
 
 int SocketDemoUtils_accept(int sockFd, struct sockaddr_in *addr)
 {
-	int client_address_len = 0;
+	socklen_t client_address_len;
     int result = -1;
 
     if (sockFd <= 0)
@@ -262,8 +262,7 @@ int SocketDemoUtils_accept(int sockFd, struct sockaddr_in *addr)
     // until a new client connection comes in, whereupon it returns
     // a file descriptor that represents the socket on our side that
     // is connected to the client.
-    if ((result = accept(sockFd, (struct sockaddr*)addr, 
-        &client_address_len)) < 0) 
+    if ((result = accept(sockFd, (struct sockaddr*)addr, &client_address_len)) < 0)
     {
         return result;
     }
@@ -274,9 +273,9 @@ int SocketDemoUtils_accept(int sockFd, struct sockaddr_in *addr)
     // Attempt to configure the client_socket to be non-blocking, this way
     // we can hopefully receive data as it is being sent until only getting
     // the data when the client closes the connection.
-    if (fcntl(client_socket, F_SETFL, fcntl(client_socket, F_GETFL, 0) | O_NONBLOCK) < 0)
+    if (fcntl(sockFd, F_SETFL, fcntl(sockFd, F_GETFL, 0) | O_NONBLOCK) < 0)
     {
-        error_and_close(client_socket, 
+        error_and_close(sockFd,
             "SocketDemoUtils_accept: Could not set the client endpoint to be non-blocking.\n");
     }
 
@@ -288,9 +287,6 @@ int SocketDemoUtils_accept(int sockFd, struct sockaddr_in *addr)
 
     return result;
 }
-
-int SocketDemoUtils_recv(int sockFd, char **buf);
-int SocketDemoUtils_send(int sockFd, const char *buf, int numBytes);
 
 // This function gets a line of text from a socket,
 // and stores it in location referenced by buf.
@@ -376,9 +372,9 @@ int SocketDemoUtils_recv(int sockFd, char **buf)
 	return total_read;
 }
 
-int SocketDemoUtils_send(int sockFd, const char* buf)
+int SocketDemoUtils_send(int sockFd, const char *buf)
 {
-    if (sockFd < 0)
+    if (sockFd <= 0)
     {
         errno = EBADF;
         return ERROR;
@@ -414,9 +410,10 @@ int SocketDemoUtils_connect(int sockFd, const char *hostnameOrIp, int port)
 		exit(ERROR);
     }
     
-    // First, try to resolve the hostname or IP address passed to us, to ensure that
-    // the 
-    if (!isValidHostnameOrIp(hostnameOrIP, &he))
+    // First, try to resolve the host name or IP address passed to us, to ensure that
+    // the host can even be found on the network in the first place.  Calling the function
+    // below also has the added bonus of filling in a hostent structure for us if it succeeds.
+    if (!isValidHostnameOrIp(hostnameOrIp, &he))
     {
         error_and_close(sockFd,
             "SocketDemoUtils_connect: Unable to validate/resolve hostname/IP address provided.");
@@ -433,8 +430,9 @@ int SocketDemoUtils_connect(int sockFd, const char *hostnameOrIp, int port)
     
     if ((result = connect(sockFd, (struct sockaddr*)&server_address, sizeof(server_address))) < 0)
     {
-        char buf[75];
-        sprintf(buf, "SocketDemoUtils_connect: The attempt to contact the server at '%s' on nPort %d failed.\n", hostnameOrIp, port);
+        char buf[100];
+        sprintf(buf, "SocketDemoUtils_connect: The attempt to contact the server at '%s' on port %d failed.\n",
+        	hostnameOrIp, port);
         error_and_close(sockFd, buf);
     }
 

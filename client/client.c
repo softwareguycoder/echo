@@ -1,7 +1,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 // client.c - Echo client in C
 // This program allows the user to connect to an ECHO server residing on a
-// IP address and nPort as supplied on the command line.  The user interface 
+// IP address and port as supplied on the command line.  The user interface
 // of this program allows the user to type lines of text to be sent to the
 // server.
 //
@@ -12,19 +12,7 @@
 // code that provided inspiration
 //
 
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h> 
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h> //inet_addr, inet_pton
-#include <netdb.h>
+#include "../lib/SocketDemoUtils.h"
 
 #define OK              0		// The server completed successfully
 #define ERROR           -1		// The server encountered an error
@@ -74,40 +62,6 @@ int canResolveServerAddress(const char *hostnameOrIP, struct hostent** he)
         "client: Hostname or IP address resolution succeeded.\n");
 
     return TRUE;
-}
-
-// Frees the memory at the address specified.
-// pBuffer is the address of a pointer which points to memory
-// allocated with the *alloc functions (malloc, calloc, realloc)
-void free_buffer(void** pBuffer)
-{   
-    if (pBuffer == NULL || *pBuffer == NULL)
-        return;     // Nothing to do since there is no address referenced
-    
-    free(*pBuffer);
-    *pBuffer = NULL;
-}
-
-void error_and_close(int socket, const char* msg) 
-{     
-    fprintf(stderr, "%s", msg);
-	perror("client");
-
-    if (socket > 0)
-    {
-        close(socket);
-        fprintf(stdout, "S: <disconnected>\n");
-        fprintf(stderr, "client: Exiting with error code %d.\n", ERROR);
-    }
-    
-	exit(ERROR);
-}
-
-void error(const char* msg) 
-{
-    fprintf(stderr, "%s", msg);
-	perror("client");
-	exit(ERROR);
 }
 
 // This function gets a line of text from a socket,
@@ -202,8 +156,6 @@ int get_line(int socket, char **lineptr, int *total_read)
 int main(int argc, char* argv[])
 {
     int client_socket = 0;                      // Client socket for connecting to the server.
-    struct hostent      *he;                    // Host entry
-    struct sockaddr_in  server_address;         // Structure for the server address and port
     char cur_line[MAX_LINE_LENGTH + 1];         // Buffer for the current line inputted by the user
                                                 // for sending to the server
     
@@ -221,12 +173,12 @@ int main(int argc, char* argv[])
 	}
 
     const char* hostnameOrIp = argv[1];         // address or host name of the remote server
-    int nPort = atoi(argv[2]);                      // port number that server is listening on
+    int port = atoi(argv[2]);                      // port number that server is listening on
 
     fprintf(stdout, 
         "client: Configured to connect to server at address '%s'.\n", hostnameOrIp);
     fprintf(stdout,
-        "client: Configured to connect to server listening on nPort %d.\n", nPort);  
+        "client: Configured to connect to server listening on port %d.\n", port);
     fprintf(stdout,
         "client: Attempting to allocate new connection endpoint...\n");
     
@@ -241,7 +193,7 @@ int main(int argc, char* argv[])
     // Attempt to connect to the server.  The function below is guaranteed to close the socket
     // and forcibly terminate this program in the event of a network error, so we do not need   
     // to check the result.
-    SocketDemoUtils_connect(client_socket, hostname, nPort);
+    SocketDemoUtils_connect(client_socket, hostnameOrIp, port);
 
     /* Print some usage directions */
     fprintf(stdout,

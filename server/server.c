@@ -12,11 +12,26 @@
 // inspiration
 //
 
-
 /*
 	TCP uses 2 types of sockets: the connection socket and the listen socket.
 	The goal is to separate the connection phase from the data exchange phase.
 */
+
+#define _GNU_SOURCE
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <strings.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h> //inet_addr, inet_pton
+#include <netdb.h>
+#include <signal.h>
+#include <errno.h>
 
 #define OK              0		// The server completed successfully
 #define ERROR           -1		// The server encountered an error
@@ -115,14 +130,14 @@ int main(int argc, char *argv[])
 		error("server: Could not bind endpoint.\n");
 	}
 
-	fprintf(stdout, "server: Endpoint bound to localhost on port %d.\n", port);
+	fprintf(stdout, "server: Endpoint bound to localhost on port %s.\n", argv[1]);
 
 	if (SocketDemoUtils_listen(server_socket, BACKLOG_SIZE) < 0) 
 	{
 		error("server: Could not open socket for listening.\n");
 	}
 
-	fprintf(stdout, "server: Now listening on port %d\n", port);
+	fprintf(stdout, "server: Now listening on port %s\n", argv[1]);
 
 	// socket address used to store client address
 	struct sockaddr_in client_address;

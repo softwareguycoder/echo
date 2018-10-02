@@ -14,7 +14,7 @@
 #include <sys/types.h> 
 #include <sys/socket.h>
 #include <netinet/in.h>
-
+#include <netdb.h>
 
 #define OK              0		// The server completed successfully
 #define ERROR           -1		// The server encountered an error
@@ -36,7 +36,7 @@ int SocketDemoUtils_bind(int sockFd, struct sockaddr_in *addr);
 int SocketDemoUtils_listen(int sockFd);
 int SocketDemoUtils_accept(int sockFd, struct sockaddr_in *addr);
 int SocketDemoUtils_recv(int sockFd, char **buf);
-int SocketDemoUtils_send(int sockFd, const char *buf, int numBytes);
+int SocketDemoUtils_send(int sockFd, const char *buf);
 int SocketDemoUtils_getline(int sockFd, char **lineptr, int *total_read);
 int SocketDemoUtils_connect(int sockFd, const char *hostnameOrIp, int port);
 
