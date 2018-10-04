@@ -77,9 +77,11 @@ int main(int argc, char *argv[])
 {
     fprintf(stdout, "server: Welcome to the server program.\n");
 
+    fprintf(stdout, "server: Port number configured as %s.\n", argv[1]);
+
     int bytesReceived = 0, bytesSent = 0;
     
-    // Since the usual way to exi this program is for the user to
+    // Since the usual way to exit this program is for the user to
     // press CTRL+C to forcibly terminate it, install a Linux SIGINT
     // handler here so that when the user does this, we may still 
     // get a chance to run the proper cleanup code.

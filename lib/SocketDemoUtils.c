@@ -176,7 +176,7 @@ int SocketDemoUtils_createTcpSocket()
 void SocketDemoUtils_populateServerAddrInfo(const char *port, struct sockaddr_in *addr)
 {
     if (port == NULL
-        || strlen(port)
+        || strlen(port) == 0
         || port[0] == '\0')
     {
         fprintf(stderr,
