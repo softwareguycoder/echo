@@ -2,6 +2,7 @@
 // SocketDemoUtils.c: Definitions for the functions in the SocketDemoUtils.lib
 // static library
 
+#include "../../conversion_core/conversion_core/include/conversion_core.h"
 #include "SocketDemoUtils.h"
 
 /**
@@ -193,8 +194,9 @@ void SocketDemoUtils_populateServerAddrInfo(const char *port, struct sockaddr_in
 
     // Get the port number from its string representation and then validate that it is in
     // the proper range
-    int portnum = atoi(port);
-    if (!isUserPortValid(portnum))
+    int portnum = 0;
+    int result = char_to_long(port, (long*)&portnum);
+    if (result >= 0 && !isUserPortValid(portnum))
 	{
 		fprintf(stderr, 
 			"SocketDemoUtils_populateServerAddrInfo: Port number must be in the range 1024-49151 inclusive.\n");

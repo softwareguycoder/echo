@@ -3,6 +3,7 @@
 	<name>SocketDemoUtils</name>
 	<comment></comment>
 	<projects>
+		<project>conversion_core</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
