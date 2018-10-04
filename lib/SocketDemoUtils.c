@@ -4,6 +4,13 @@
 
 #include "SocketDemoUtils.h"
 
+/**
+ * \brief Checks the integer value supplied to ensure it's a valid user port
+ * number and not reserved for a different service.
+ * \param port Variable containing the value to be validated.
+ * \returns Zero if the 'port' parameter is not in the range [1024, 49151]
+ * (inclusive); nonzero otherwise.
+ */
 int isUserPortValid(int port)
 {
     return port >= 1024 && port < 49151;
@@ -231,6 +238,15 @@ int SocketDemoUtils_bind(int sockFd, struct sockaddr_in *addr)
     return bind(sockFd, (struct sockaddr*)addr, sizeof(*addr));
 }
 
+/**
+ * \brief Sets up a TCP or UDP server socket to listen on a port and IP address
+ * to which it has been bound previously with the SocketDemoUtils_bind function.
+ * \params sockFd Socket file descriptor.
+ * \returns ERROR if the socket file descriptor passed in sockFd does not represent
+ * a valid, open socket and sets errno to EBADF.  Otherwise, returns the result of
+ * calling listen on the socket file descriptor passed with a backlog size of
+ * BACKLOG_SIZE (128 by default).  Zero is returned if the operation was successful.
+ */
 int SocketDemoUtils_listen(int sockFd)
 {
     if (sockFd <= 0)
@@ -242,10 +258,27 @@ int SocketDemoUtils_listen(int sockFd)
     return listen(sockFd, BACKLOG_SIZE);
 }
 
+/**
+ * \brief Accepts an incoming connection on a socket and returns information about
+ * the remote host.
+ * \param sockFd Socket file descriptor on which to accept new incoming connections.
+ * \param addr Reference to a sockaddr_in structure that receives information about
+ * the IP address of the remote endpoint.
+ * \returns Socket file descriptor representing the local endpoint of the new
+ * incoming connection; or a negative number indicating that errno should be read
+ * for the error description.
+ * \remarks Returns ERROR if any of the following are true: (a) sets errno to EBADF
+ * if sockFd is an invalid value (nonpositive) or (b) sets errno to EINVAL if addr
+ * is NULL.  If the incoming connection is accepted successfully, this function also
+ * calls fcntl on the new file descriptor to set the incoming socket connection to be
+ * non-blocking.  This allows data to be read from recv buffer as it is still coming
+ * in.  This function blocks the calling thread until an incoming connection has been
+ * established.
+ */
 int SocketDemoUtils_accept(int sockFd, struct sockaddr_in *addr)
 {
 	socklen_t client_address_len;
-    int result = -1;
+    int result = ERROR;
 
     if (sockFd <= 0)
     {
@@ -288,11 +321,16 @@ int SocketDemoUtils_accept(int sockFd, struct sockaddr_in *addr)
     return result;
 }
 
-// This function gets a line of text from a socket,
-// and stores it in location referenced by buf.
-// Returns the total bytes read of THIS line. total_read
-// points to an integer variable that will receive the 
-// OVERALL total bytes read.
+/** \brief Reads a line of data, terminated by the '\n' character, from a socket.
+ *  \param sockFd Socket file descriptor from which to receive data.
+ *  \param buf Reference to an address at which to allocate storage for the received data.
+ *  \returns Total bytes read for the current line or a negative number otherwise.
+ *  \remarks This function will forcibly terminate the calling program with an exit
+ *  code of ERROR if the operation fails.  It is the responsibility of the caller to
+ *  free the memory referenced by *buf.  The caller must always pass NULL for buf.  If
+ *  valid storage is passed, this function will free the storage referenced by *buf and
+ *  allocate brand-new storage for the incoming line.
+ */
 int SocketDemoUtils_recv(int sockFd, char **buf)
 {
 	int bytes_read = 0;
@@ -309,7 +347,7 @@ int SocketDemoUtils_recv(int sockFd, char **buf)
     // plus an extra slot to hold the null-terminator.  Free any
     // storage already referenced by *buf.  If *buf happens to be
     // NULL already, a malloc is done.  Once the new memory has been
-    // allocated, we then explicity zero it out.
+    // allocated, we then explicitly zero it out.
 	total_read = 0;
 	*buf = (char*)realloc(*buf, (RECV_BLOCK_SIZE + 1)*sizeof(char));
     explicit_bzero((void*)*buf, RECV_BLOCK_SIZE + 1);
@@ -372,6 +410,16 @@ int SocketDemoUtils_recv(int sockFd, char **buf)
 	return total_read;
 }
 
+/**
+ *	\brief Sends data to the endpoint on the other end of the connection referenced
+ *	by the connected socket.
+ *	\param sockFd Socket file descriptor.  Must be a descriptor for a valid socket that
+ *	is currently connected to a remote host.
+ *	\param buf Address of a character array containing the bytes to be sent.
+ *	\returns ERROR if the operation failed; number of bytes sent otherwise.
+ *	If the ERROR value is returned, errno should be examined to determine the
+ *  cause of the error.
+ */
 int SocketDemoUtils_send(int sockFd, const char *buf)
 {
     if (sockFd <= 0)
@@ -390,9 +438,21 @@ int SocketDemoUtils_send(int sockFd, const char *buf)
     return (int)send(sockFd, buf, strlen(buf), 0);
 }
 
+/**
+ * \brief Connects a socket to a remote host whose hostname or IP address and
+ * port number is specified.
+ * \param sockFd Socket file descriptor representing a socket that is not yet
+ * connected to a remote endpoint.
+ * \param hostnameOrIp String indicating the human-readable (in DNS) hostname
+ * or the IP address of the remote host.
+ * \param port Port number that the service on the remote host is listening on.
+ * \returns Zero if successful; ERROR if an error occurred.  The errno
+ * value should be examined if this happens.  In other cases, this function
+ * forcibly terminates the calling program with the ERROR exit code.
+ */
 int SocketDemoUtils_connect(int sockFd, const char *hostnameOrIp, int port)
 {  
-    int result = 0;
+    int result = ERROR;
     struct hostent      *he;                    // Host entry
     struct sockaddr_in  server_address;         // Structure for the server address and port
     
