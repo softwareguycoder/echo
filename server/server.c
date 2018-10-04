@@ -17,24 +17,7 @@
 	The goal is to separate the connection phase from the data exchange phase.
 */
 
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h> //inet_addr, inet_pton
-#include <netdb.h>
-#include <signal.h>
-#include <errno.h>
-
-#define OK              0		// The server completed successfully
-#define ERROR           -1		// The server encountered an error
+#include "../lib/SocketDemoUtils.h"
 
 #define MIN_NUM_ARGS	2		// The minimum # of cmd line args to pass
 #define USAGE_STRING	"Usage: server <port_num>\n" 	// Usage string
@@ -132,7 +115,7 @@ int main(int argc, char *argv[])
 
 	fprintf(stdout, "server: Endpoint bound to localhost on port %s.\n", argv[1]);
 
-	if (SocketDemoUtils_listen(server_socket, BACKLOG_SIZE) < 0) 
+	if (SocketDemoUtils_listen(server_socket) < 0)
 	{
 		error("server: Could not open socket for listening.\n");
 	}
