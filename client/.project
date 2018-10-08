@@ -4,6 +4,9 @@
 	<comment></comment>
 	<projects>
 		<project>SocketDemoUtils</project>
+		<project>conversion_core</project>
+		<project>debug_core</project>
+		<project>inetsock_core</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
