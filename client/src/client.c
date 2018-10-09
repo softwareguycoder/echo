@@ -124,8 +124,14 @@ int main(int argc, char* argv[])
 
     while(NULL != fgets(cur_line, MAX_LINE_LENGTH, stdin))
     {
-        if (strcasecmp(cur_line, "exit\n") == 0) break;
-        if (strcasecmp(cur_line, "quit\n") == 0) break;
+        if (strcasecmp(cur_line, "exit\n") == 0) {
+        	SocketDemoUtils_send(client_socket , ".\n");
+        	break;
+        }
+        if (strcasecmp(cur_line, "quit\n") == 0){
+        	SocketDemoUtils_send(client_socket , ".\n");
+        	break;
+        }
 
         if (strcasecmp(cur_line, "\n") == 0) 
         {

@@ -17,14 +17,8 @@
 	The goal is to separate the connection phase from the data exchange phase.
 */
 
-#include "../lib/SocketDemoUtils.h"
-
-#define MIN_NUM_ARGS	2		// The minimum # of cmd line args to pass
-#define USAGE_STRING	"Usage: server <port_num>\n" 	// Usage string
-#define BACKLOG_SIZE	128		// Max number of client connections
-
-#define RECV_BLOCK_SIZE	1
-#define RECV_FLAGS	0
+#include "stdafx.h"
+#include "server.h"
 
 int server_socket = 0;
 int is_execution_over = 0;
@@ -132,7 +126,7 @@ int main(int argc, char *argv[])
 	// run indefinitely
 	while(1) 
 	{
-		fprintf(stdout, "server: Waiting for client connection...\n");
+		//fprintf(stdout, "server: Waiting for client connection...\n");
 
 		// We now call the accept function.  This function holds us up
 		// until a new client connection comes in, whereupon it returns
@@ -143,13 +137,11 @@ int main(int argc, char *argv[])
 		{
             close(client_socket);
 
-            if (errno == EBADF)
-            {
-                break;  // bad file descriptor, thrown when user presses CTRL+C
-            }
-
-			error("server: Could not open an endpoint to accept data");
+            continue;
+			//error("server: Could not open an endpoint to accept data");
 		}
+
+		int wait_for_new_connection = 0;
 
         while(1)
         {          
@@ -176,6 +168,12 @@ int main(int argc, char *argv[])
                     fprintf(stdout,
                         "server: Client connection closed.\n");
 
+                    // throw away the buffer since we just need it to hold
+                    // one line at a time.
+                    free_buffer((void**)&buf);
+
+                    wait_for_new_connection = 1;
+
                     break;
                 }   
 
@@ -196,6 +194,10 @@ int main(int argc, char *argv[])
             }
         }
 
+        if (wait_for_new_connection)
+        {
+        	continue;
+        }
 		// Let the 'outer' while loop start over again, waiting to accept new
 		// client connections.  User must close the server 'by hand'
 		// but we want the server to remain 'up' as long as possible,
