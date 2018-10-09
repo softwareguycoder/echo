@@ -44,7 +44,7 @@ void cleanup_handler(int s)
     is_execution_over = 1;
 
     fprintf(stdout, "server: Server endpoint closed.\n");
-	fprintf(stdout, "server: execution finished with no errors.\n");	
+	fprintf(stdout, "server: execution finished with no errors.\n");
 
     exit(OK);
 }
@@ -69,9 +69,8 @@ void install_sigint_handler()
 
 int main(int argc, char *argv[]) 
 {
-    fprintf(stdout, "server: Welcome to the server program.\n");
-
-    fprintf(stdout, "server: Port number configured as %s.\n", argv[1]);
+    printf(SOFTWARE_TITLE);
+    printf(COPYRIGHT_MESSAGE);
 
     int bytesReceived = 0, bytesSent = 0;
     
@@ -91,6 +90,9 @@ int main(int argc, char *argv[])
 		fprintf(stderr, USAGE_STRING);		
 		exit(ERROR);
 	}
+
+    if (argc >= MIN_NUM_ARGS)
+    	fprintf(stdout, "server: Port number configured as %s.\n", argv[1]);
 
     server_socket = SocketDemoUtils_createTcpSocket();
 
@@ -138,7 +140,7 @@ int main(int argc, char *argv[])
             close(client_socket);
 
             continue;
-			//error("server: Could not open an endpoint to accept data");
+			//error("server: Could not open an endpoint to accept data\n");
 		}
 
 		int wait_for_new_connection = 0;
@@ -181,7 +183,7 @@ int main(int argc, char *argv[])
                 bytes = SocketDemoUtils_send(client_socket, buf);
                 if (bytes < 0)
                 {
-                    error("server: Send failed.");
+                    error("server: Send failed.\n");
                 }
 
                 bytesSent += bytes;
@@ -204,7 +206,7 @@ int main(int argc, char *argv[])
 		// just in case that more clients want to connect
 	}
 
-	fprintf(stdout, "server: Execution finished with no errors.\n");	
+	fprintf(stdout, "server: Execution finished with no errors.\n");
 
 	return OK;
 }

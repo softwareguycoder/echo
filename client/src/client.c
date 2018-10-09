@@ -54,11 +54,11 @@ int canResolveServerAddress(const char *hostnameOrIP, struct hostent** he)
 
 int main(int argc, char* argv[])
 {
+    printf(SOFTWARE_TITLE);
+    printf(COPYRIGHT_MESSAGE);
+
     int client_socket = 0;                      // Client socket for connecting to the server.
     char cur_line[MAX_LINE_LENGTH + 1];         // Buffer for the current line inputted by the user
-                                                // for sending to the server
-    
-    fprintf(stdout, "client: Welcome to the client program\n");
 
     fprintf(stdout, "client: Checking arguments...\n");
 
