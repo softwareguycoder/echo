@@ -15,43 +15,6 @@
 #include "stdafx.h"
 #include "client.h"
 
-// Determines whether the host name or IP address provided by the user can be
-// resolved by DNS.  Attempts to actually perform the resolution.  Returns zero 
-// if resolution has failed, or if the 'he' parameter does not contain a valid 
-// address, or 'hostnameOrIP' is blank. Returns nonzero if the host name or IP address
-// can be resolved, and fills the location pointed to by 'he' with a pointer to a 
-// hostent structure containing the information necessary to connect to a 
-// remote server.
-int canResolveServerAddress(const char *hostnameOrIP, struct hostent** he)
-{
-    if (hostnameOrIP == NULL
-        || hostnameOrIP[0] == '\0'
-        || strlen(hostnameOrIP) == 0)
-    {
-        return FALSE;
-    }
-
-    if (he == NULL) 
-    {
-        // return FALSE if no storage location for the he pointer passed
-        return FALSE;
-    }
-
-    fprintf(stdout, 
-        "client: Resolving host name or IP address '%s'...\n", hostnameOrIP);
-
-    if ( (*he = gethostbyname(hostnameOrIP) ) == NULL ) {
-        fprintf(stderr, "client: Hostname or IP address resolution failed.\n");
-        *he = NULL;
-        return FALSE;
-    }
-
-    fprintf(stdout,
-        "client: Hostname or IP address resolution succeeded.\n");
-
-    return TRUE;
-}
-
 int main(int argc, char* argv[])
 {
     printf(SOFTWARE_TITLE);
